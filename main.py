@@ -1,6 +1,11 @@
-import asyncio, os
+import asyncio
+import os
+
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher
+from aiogram.client.default import DefaultBotProperties
+from aiogram.fsm.storage.memory import MemoryStorage
+
 from bot.handlers import router
 
 async def main():
@@ -9,8 +14,8 @@ async def main():
     if not token:
         raise RuntimeError("BOT_TOKEN not set in .env")
 
-    bot = Bot(token=token)
-    dp = Dispatcher()
+    bot = Bot(token=token, default=DefaultBotProperties(parse_mode="HTML"))
+    dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(router)
 
     await dp.start_polling(bot)
