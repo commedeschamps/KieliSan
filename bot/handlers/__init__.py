@@ -1,10 +1,10 @@
 from aiogram import Router
 
-from .start import router as start_router
-from .info import router as info_router
-from .quiz import router as quiz_router
-from .stats import router as stats_router
-from .feedback import router as feedback_router
+from .system.start import router as start_router
+from .content.info import router as info_router
+from .quiz.quiz import router as quiz_router
+from .system.stats import router as stats_router
+from .system.feedback import router as feedback_router
 
 router = Router()
 router.include_router(start_router)

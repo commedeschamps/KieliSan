@@ -3,9 +3,12 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 DATA_DIR = BASE_DIR / "data"
-QUESTIONS_PATH = DATA_DIR / "questions.json"
-STATS_PATH = DATA_DIR / "stats.json"
-FEEDBACK_PATH = DATA_DIR / "feedback.json"
+CONTENT_DIR = DATA_DIR / "content"
+RUNTIME_DIR = DATA_DIR / "runtime"
+QUESTIONS_PATH = CONTENT_DIR / "questions.json"
+SACRED_NUMBERS_PATH = CONTENT_DIR / "sacred_numbers.json"
+STATS_PATH = RUNTIME_DIR / "stats.json"
+FEEDBACK_PATH = RUNTIME_DIR / "feedback.json"
 
 
 def _load_json(path: Path, default):
@@ -41,3 +44,7 @@ def append_feedback(entry) -> None:
     feedback = _load_json(FEEDBACK_PATH, [])
     feedback.append(entry)
     _save_json(FEEDBACK_PATH, feedback)
+
+
+def load_sacred_numbers():
+    return _load_json(SACRED_NUMBERS_PATH, {})
