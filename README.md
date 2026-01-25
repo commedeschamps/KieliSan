@@ -26,18 +26,34 @@ BOT_TOKEN=YOUR_TELEGRAM_BOT_TOKEN
 python3 main.py
 ```
 
+## Әзірлеу режимі (auto-reload)
+```bash
+python3 scripts/dev.py
+```
+
 ## Құрылым
 ```
 telegram-bot/
 ├── bot/
 │   ├── handlers/
+│   │   ├── content/
+│   │   ├── quiz/
+│   │   └── system/
 │   ├── keyboards/
+│   │   ├── content/
+│   │   ├── quiz/
+│   │   └── system/
 │   ├── states/
 │   └── utils/
+├── assets/
+│   └── numbers/
 ├── data/
-│   ├── questions.json
-│   ├── stats.json
-│   └── feedback.json
+│   ├── content/
+│   │   ├── questions.json
+│   │   └── sacred_numbers.json
+│   └── runtime/
+│       ├── stats.json
+│       └── feedback.json
 ├── main.py
 └── requirements.txt
 ```
