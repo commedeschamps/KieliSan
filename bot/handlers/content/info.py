@@ -11,6 +11,7 @@ from bot.keyboards.content.numbers import (
     numbers_keyboard,
     number_info_keyboard,
     number_quiz_keyboard,
+    number_actions_keyboard,
 )
 from bot.utils.loader import load_sacred_numbers
 
@@ -287,7 +288,10 @@ async def number_quiz_answer(callback: CallbackQuery) -> None:
     if len(_answered_quiz) > 5000:
         _answered_quiz.clear()
 
-    await callback.message.answer(_build_quiz_reply(quiz, choice))
+    await callback.message.answer(
+        _build_quiz_reply(quiz, choice),
+        reply_markup=number_actions_keyboard(),
+    )
     try:
         await message.edit_reply_markup(reply_markup=None)
     except Exception:

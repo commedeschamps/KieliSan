@@ -52,3 +52,16 @@ def number_quiz_keyboard(number: str, options: dict) -> InlineKeyboardMarkup:
                 ]
             )
     return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def number_actions_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="Келесі сан", callback_data="num:next")],
+            [InlineKeyboardButton(text="🎲 Кездейсоқ сан", callback_data="num:random")],
+            [
+                InlineKeyboardButton(text="⬅️ Сандар тізімі", callback_data="num:list"),
+                InlineKeyboardButton(text="⬅️ Мәзір", callback_data="menu"),
+            ],
+        ]
+    )

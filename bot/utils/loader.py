@@ -7,6 +7,8 @@ CONTENT_DIR = DATA_DIR / "content"
 RUNTIME_DIR = DATA_DIR / "runtime"
 QUESTIONS_PATH = CONTENT_DIR / "questions.json"
 SACRED_NUMBERS_PATH = CONTENT_DIR / "sacred_numbers.json"
+COMPARE_TEXT_PATH = CONTENT_DIR / "compare_text.txt"
+COMPARE_QUESTIONS_PATH = CONTENT_DIR / "compare_questions.json"
 STATS_PATH = RUNTIME_DIR / "stats.json"
 FEEDBACK_PATH = RUNTIME_DIR / "feedback.json"
 
@@ -48,3 +50,13 @@ def append_feedback(entry) -> None:
 
 def load_sacred_numbers():
     return _load_json(SACRED_NUMBERS_PATH, {})
+
+
+def load_compare_text() -> str:
+    if not COMPARE_TEXT_PATH.exists():
+        return ""
+    return COMPARE_TEXT_PATH.read_text(encoding="utf-8")
+
+
+def load_compare_questions():
+    return _load_json(COMPARE_QUESTIONS_PATH, [])
