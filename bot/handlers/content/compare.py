@@ -210,7 +210,7 @@ def _render_compare(section: str, view: str) -> str:
     return "\n\n".join(lines)
 
 
-async def _send_compare(message: Message, number: str, view: str) -> None:
+async def _send_compare(message: Message, number: str, view: str, *, edit: bool = False) -> None:
     text = load_compare_text()
     section = _extract_section(text, number)
     if not section:
@@ -222,6 +222,20 @@ async def _send_compare(message: Message, number: str, view: str) -> None:
 
     formatted = _render_compare(section, view)
     parts = _split_text(formatted)
+    if edit and len(parts) == 1:
+        try:
+            await message.edit_text(
+                parts[0],
+                reply_markup=compare_info_keyboard(number, view),
+            )
+            return
+        except Exception as exc:
+            if "message is not modified" in str(exc).lower():
+                return
+            try:
+                await message.edit_reply_markup(reply_markup=None)
+            except Exception:
+                pass
     for idx, part in enumerate(parts):
         if idx == len(parts) - 1:
             await message.answer(part, reply_markup=compare_info_keyboard(number, view))
@@ -239,6 +253,10 @@ async def compare_menu(message: Message) -> None:
 
 @router.callback_query(F.data == "cmp:list")
 async def compare_list(callback: CallbackQuery) -> None:
+    try:
+        await callback.message.edit_reply_markup(reply_markup=None)
+    except Exception:
+        pass
     await callback.message.answer(
         "Санды таңдаңыз:",
         reply_markup=compare_numbers_keyboard(COMPARE_NUMBERS),
@@ -249,27 +267,31 @@ async def compare_list(callback: CallbackQuery) -> None:
 @router.callback_query(F.data.startswith("cmp:num:"))
 async def compare_show_number(callback: CallbackQuery) -> None:
     number = callback.data.split(":", 2)[2]
-    await _send_compare(callback.message, number, "culture:kazakh")
+    await _send_compare(callback.message, number, "culture:kazakh", edit=True)
     await callback.answer()
 
 
 @router.callback_query(F.data.startswith("cmp:view:"))
 async def compare_view(callback: CallbackQuery) -> None:
     _, _, number, view = callback.data.split(":", 3)
-    await _send_compare(callback.message, number, view)
+    await _send_compare(callback.message, number, view, edit=True)
     await callback.answer()
 
 
 @router.callback_query(F.data.startswith("cmp:cul:"))
 async def compare_culture(callback: CallbackQuery) -> None:
     _, _, number, code = callback.data.split(":", 3)
-    await _send_compare(callback.message, number, f"culture:{code}")
+    await _send_compare(callback.message, number, f"culture:{code}", edit=True)
     await callback.answer()
 
 
 @router.callback_query(F.data == "cmp:quiz")
 async def compare_quiz_menu(callback: CallbackQuery, state: FSMContext) -> None:
     await state.clear()
+    try:
+        await callback.message.edit_reply_markup(reply_markup=None)
+    except Exception:
+        pass
     await callback.message.answer(
         "Деңгейді таңдаңыз:",
         reply_markup=compare_mode_keyboard(),
@@ -462,14 +484,12 @@ async def compare_quiz_submit(callback: CallbackQuery, state: FSMContext) -> Non
     await callback.answer()
 
 
-@router.message(CompareQuizStates.in_quiz)
-async def compare_quiz_text_fallback(message: Message) -> None:
-    if message.text == MENU_BACK:
-        return
-    await message.answer("Жауапты төмендегі батырмалар арқылы таңдаңыз.")
-
-
 @router.message(CompareQuizStates.in_quiz, F.text == MENU_BACK)
 async def compare_quiz_back_text(message: Message, state: FSMContext) -> None:
     await state.clear()
     await message.answer("Мәзірге оралдық.", reply_markup=main_menu_keyboard())
+
+
+@router.message(CompareQuizStates.in_quiz, F.text != MENU_BACK)
+async def compare_quiz_text_fallback(message: Message) -> None:
+    await message.answer("Жауапты төмендегі батырмалар арқылы таңдаңыз.")

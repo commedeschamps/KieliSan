@@ -136,13 +136,6 @@ async def quiz_menu(message: Message, state: FSMContext) -> None:
     )
 
 
-@router.callback_query(F.data == "menu")
-async def quiz_back_to_menu(callback: CallbackQuery, state: FSMContext) -> None:
-    await state.clear()
-    await callback.message.answer("Мәзірге оралдық.", reply_markup=main_menu_keyboard())
-    await callback.answer()
-
-
 @router.callback_query(F.data.startswith("mode:"))
 async def quiz_start(callback: CallbackQuery, state: FSMContext) -> None:
     mode = callback.data.split(":", 1)[1]
@@ -262,14 +255,12 @@ async def quiz_submit(callback: CallbackQuery, state: FSMContext) -> None:
     await callback.answer()
 
 
-@router.message(QuizStates.in_quiz)
-async def quiz_text_fallback(message: Message) -> None:
-    if message.text == MENU_BACK:
-        return
-    await message.answer("Жауапты төмендегі батырмалар арқылы таңдаңыз.")
-
-
 @router.message(QuizStates.in_quiz, F.text == MENU_BACK)
 async def quiz_back_text(message: Message, state: FSMContext) -> None:
     await state.clear()
     await message.answer("Мәзірге оралдық.", reply_markup=main_menu_keyboard())
+
+
+@router.message(QuizStates.in_quiz, F.text != MENU_BACK)
+async def quiz_text_fallback(message: Message) -> None:
+    await message.answer("Жауапты төмендегі батырмалар арқылы таңдаңыз.")

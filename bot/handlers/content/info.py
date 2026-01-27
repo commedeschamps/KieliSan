@@ -187,6 +187,10 @@ async def number_list(callback: CallbackQuery) -> None:
         await callback.answer()
         return
 
+    try:
+        await callback.message.edit_reply_markup(reply_markup=None)
+    except Exception:
+        pass
     numbers = sorted(data.keys(), key=lambda n: int(n))
     await callback.message.answer(
         "Қай сан туралы білгіңіз келеді?",
