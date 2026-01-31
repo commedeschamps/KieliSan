@@ -19,6 +19,9 @@ def _format_stats(user_stats: dict) -> str:
     last_date = user_stats.get("last_date", "-")
     best_score = user_stats.get("best_score", 0)
     best_total = user_stats.get("best_total", 0)
+    total_points = user_stats.get("total_points", 0)
+    last_points = user_stats.get("last_points", 0)
+    best_points = user_stats.get("best_points", 0)
 
     avg_pct = 0
     if total_questions:
@@ -28,8 +31,11 @@ def _format_stats(user_stats: dict) -> str:
         "📊 Сіздің статистикаңыз:\n"
         f"• Викторина саны: {quizzes_taken}\n"
         f"• Орташа нәтиже: {avg_pct}%\n"
+        f"• Жалпы ұпай: {total_points}\n"
+        f"• Ең жоғары ұпай: {best_points}\n"
         f"• Ең жақсы нәтиже: {best_score}/{best_total}\n"
         f"• Соңғы нәтиже: {last_score}/{last_total} ({last_mode})\n"
+        f"• Соңғы ұпай: {last_points}\n"
         f"• Соңғы өту уақыты: {last_date}"
     )
 

@@ -11,14 +11,21 @@
     "last_date": "2026-01-24 23:14"
   },
   "807613727": {
-    "quizzes_taken": 2,
-    "total_correct": 15,
-    "total_questions": 25,
+    "quizzes_taken": 3,
+    "total_correct": 26,
+    "total_questions": 39,
     "best_score": 9,
     "best_total": 11,
-    "last_score": 9,
-    "last_total": 11,
-    "last_mode": "Орташа",
-    "last_date": "2026-01-26 13:17"
+    "last_score": 11,
+    "last_total": 14,
+    "last_mode": "Жеңіл",
+    "last_date": "2026-01-31 14:55",
+    "total_points": 110,
+    "last_points": 110,
+    "best_points": 110,
+    "display_name": "@commedeschamps",
+    "username": "commedeschamps",
+    "first_name": "supersonic",
+    "last_name": ""
   }
 }

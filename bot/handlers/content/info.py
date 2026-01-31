@@ -10,13 +10,10 @@ from bot.keyboards.system.menu import main_menu_keyboard
 from bot.keyboards.content.numbers import (
     numbers_keyboard,
     number_info_keyboard,
-    number_quiz_keyboard,
-    number_actions_keyboard,
 )
 from bot.utils.loader import load_sacred_numbers
 
 router = Router()
-_answered_quiz: dict[tuple[int, int], bool] = {}
 BASE_DIR = Path(__file__).resolve().parents[3]
 IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".webp")
 CAPTION_LIMIT = 1024
@@ -61,18 +58,6 @@ def _render_full(item: dict) -> str:
     return "\n\n".join([block for block in blocks if block])
 
 
-def _render_quiz(quiz: dict) -> str:
-    question = quiz.get("question", "")
-    options = quiz.get("options", {})
-    if not question or not options:
-        return ""
-    lines = ["🧠 Сұрақ:", question, ""]
-    for key in ["A", "B", "C", "D"]:
-        if key in options:
-            lines.append(f"{key}) {options[key]}")
-    return "\n".join(lines)
-
-
 def _render_card(number: str, item: dict, mode: str) -> str:
     title = f"<b>{number} саны</b>"
     content = _render_full(item) if mode == "full" else _render_short(item)
@@ -81,26 +66,6 @@ def _render_card(number: str, item: dict, mode: str) -> str:
     if content:
         parts.append(content)
     return "\n\n".join(parts)
-
-
-def _build_quiz_reply(quiz: dict, choice: str) -> str:
-    correct = quiz.get("correct", "")
-    options = quiz.get("options", {})
-    is_correct = choice == correct
-    prefix = "✅ Дұрыс!" if is_correct else "❌ Қате."
-    if correct:
-        answer_text = options.get(correct, "")
-        if answer_text:
-            answer_line = f"Дұрыс жауап: {correct}) {answer_text}"
-        else:
-            answer_line = f"Дұрыс жауап: {correct}"
-    else:
-        answer_line = "Дұрыс жауап белгіленбеген."
-    explanation = quiz.get("explanation", "")
-    lines = [prefix, answer_line]
-    if explanation:
-        lines.append(explanation)
-    return "\n".join(lines)
 
 
 def _find_image_path(number: str) -> Optional[Path]:
@@ -129,14 +94,6 @@ async def _send_card(message: Message, number: str, item: dict, mode: str) -> No
             await message.answer(text)
     else:
         await message.answer(text, reply_markup=number_info_keyboard(number, mode))
-
-    quiz = item.get("quiz", {})
-    quiz_text = _render_quiz(quiz)
-    if quiz_text:
-        await message.answer(
-            quiz_text,
-            reply_markup=number_quiz_keyboard(number, quiz.get("options", {})),
-        )
 
 
 async def _edit_card(message: Message, number: str, item: dict, mode: str) -> None:
@@ -257,49 +214,6 @@ async def number_help(callback: CallbackQuery) -> None:
     await callback.message.answer(
         "\n\n".join([f"<b>{number} саны</b>", short_text])
     )
-    await callback.answer()
-
-
-@router.callback_query(F.data.startswith("num:ans:"))
-async def number_quiz_answer(callback: CallbackQuery) -> None:
-    _, _, number, choice = callback.data.split(":", 3)
-    message = callback.message
-    if not message:
-        await callback.answer()
-        return
-
-    key = (message.chat.id, message.message_id)
-    if _answered_quiz.get(key):
-        await callback.answer("Бұл сұраққа жауап берілді.", show_alert=False)
-        return
-
-    data = load_sacred_numbers()
-    item = data.get(number)
-    if not item:
-        await callback.message.answer(
-            "Бұл сан бойынша мәлімет табылмады.",
-            reply_markup=main_menu_keyboard(),
-        )
-        await callback.answer()
-        return
-
-    quiz = item.get("quiz", {})
-    if not quiz:
-        await callback.answer("Бұл санға сұрақ табылмады.", show_alert=True)
-        return
-
-    _answered_quiz[key] = True
-    if len(_answered_quiz) > 5000:
-        _answered_quiz.clear()
-
-    await callback.message.answer(
-        _build_quiz_reply(quiz, choice),
-        reply_markup=number_actions_keyboard(),
-    )
-    try:
-        await message.edit_reply_markup(reply_markup=None)
-    except Exception:
-        pass
     await callback.answer()
 
 

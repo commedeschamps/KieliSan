@@ -37,31 +37,3 @@ def number_info_keyboard(number: str, mode: str) -> InlineKeyboardMarkup:
     )
 
     return InlineKeyboardMarkup(inline_keyboard=rows)
-
-
-def number_quiz_keyboard(number: str, options: dict) -> InlineKeyboardMarkup:
-    rows: list[list[InlineKeyboardButton]] = []
-    for key in ["A", "B", "C", "D"]:
-        if key in options:
-            rows.append(
-                [
-                    InlineKeyboardButton(
-                        text=key,
-                        callback_data=f"num:ans:{number}:{key}",
-                    )
-                ]
-            )
-    return InlineKeyboardMarkup(inline_keyboard=rows)
-
-
-def number_actions_keyboard() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="Келесі сан", callback_data="num:next")],
-            [InlineKeyboardButton(text="🎲 Кездейсоқ сан", callback_data="num:random")],
-            [
-                InlineKeyboardButton(text="⬅️ Сандар тізімі", callback_data="num:list"),
-                InlineKeyboardButton(text="⬅️ Мәзір", callback_data="menu"),
-            ],
-        ]
-    )

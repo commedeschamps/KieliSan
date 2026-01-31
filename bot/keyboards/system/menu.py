@@ -5,6 +5,9 @@ from bot.constants import (
     MENU_COMPARE,
     MENU_QUIZ,
     MENU_STATS,
+    MENU_LEADERBOARD,
+    MENU_HELP,
+    MENU_ABOUT,
     MENU_FEEDBACK,
     MENU_BACK,
 )
@@ -15,7 +18,8 @@ def main_menu_keyboard() -> ReplyKeyboardMarkup:
         keyboard=[
             [KeyboardButton(text=MENU_INFO), KeyboardButton(text=MENU_COMPARE)],
             [KeyboardButton(text=MENU_QUIZ), KeyboardButton(text=MENU_STATS)],
-            [KeyboardButton(text=MENU_FEEDBACK)],
+            [KeyboardButton(text=MENU_LEADERBOARD), KeyboardButton(text=MENU_FEEDBACK)],
+            [KeyboardButton(text=MENU_HELP), KeyboardButton(text=MENU_ABOUT)],
         ],
         resize_keyboard=True,
     )

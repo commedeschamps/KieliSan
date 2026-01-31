@@ -2,10 +2,17 @@ import random
 from datetime import datetime
 
 from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, User
 from aiogram.fsm.context import FSMContext
 
-from bot.constants import MENU_QUIZ, MENU_BACK, MODE_TO_LEVEL, MODE_LABELS
+from bot.constants import (
+    MENU_QUIZ,
+    MENU_BACK,
+    MODE_TO_LEVEL,
+    MODE_LABELS,
+    POINTS_BY_LEVEL,
+    POINTS_DEFAULT,
+)
 from bot.keyboards.system.menu import main_menu_keyboard, back_menu_keyboard
 from bot.keyboards.quiz.quiz import mode_keyboard, question_keyboard
 from bot.states.quiz import QuizStates
@@ -57,10 +64,23 @@ def _build_explanation(question: dict, is_correct: bool) -> str:
     return f"{prefix}\nДұрыс жауап: {correct}\n{explanation}"
 
 
-def _update_user_stats(user_id: int, correct: int, total: int, mode: str) -> None:
+def _points_for_question(question: dict) -> int:
+    level = question.get("level", "")
+    return POINTS_BY_LEVEL.get(level, POINTS_DEFAULT)
+
+
+def _format_user_label(user: User) -> str:
+    if user.username:
+        return f"@{user.username}"
+    parts = [user.first_name, user.last_name]
+    label = " ".join([part for part in parts if part])
+    return label or f"ID {user.id}"
+
+
+def _update_user_stats(user: User, correct: int, total: int, mode: str, points: int) -> None:
     stats = load_stats()
-    key = str(user_id)
-    user = stats.get(
+    key = str(user.id)
+    user_stats = stats.get(
         key,
         {
             "quizzes_taken": 0,
@@ -72,26 +92,50 @@ def _update_user_stats(user_id: int, correct: int, total: int, mode: str) -> Non
             "last_total": 0,
             "last_mode": "-",
             "last_date": "-",
+            "total_points": 0,
+            "last_points": 0,
+            "best_points": 0,
+            "display_name": "",
+            "username": "",
+            "first_name": "",
+            "last_name": "",
         },
     )
 
-    user["quizzes_taken"] += 1
-    user["total_correct"] += correct
-    user["total_questions"] += total
-    user["last_score"] = correct
-    user["last_total"] = total
-    user["last_mode"] = MODE_LABELS.get(mode, mode)
-    user["last_date"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+    user_stats.setdefault("total_points", 0)
+    user_stats.setdefault("last_points", 0)
+    user_stats.setdefault("best_points", 0)
+    user_stats.setdefault("display_name", "")
+    user_stats.setdefault("username", "")
+    user_stats.setdefault("first_name", "")
+    user_stats.setdefault("last_name", "")
 
-    best_total = user.get("best_total", 0)
-    best_score = user.get("best_score", 0)
+    user_stats["quizzes_taken"] += 1
+    user_stats["total_correct"] += correct
+    user_stats["total_questions"] += total
+    user_stats["last_score"] = correct
+    user_stats["last_total"] = total
+    user_stats["last_mode"] = MODE_LABELS.get(mode, mode)
+    user_stats["last_date"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+    user_stats["total_points"] += points
+    user_stats["last_points"] = points
+    if points > user_stats.get("best_points", 0):
+        user_stats["best_points"] = points
+
+    user_stats["display_name"] = _format_user_label(user)
+    user_stats["username"] = user.username or ""
+    user_stats["first_name"] = user.first_name or ""
+    user_stats["last_name"] = user.last_name or ""
+
+    best_total = user_stats.get("best_total", 0)
+    best_score = user_stats.get("best_score", 0)
     best_ratio = (best_score / best_total) if best_total else 0
     current_ratio = (correct / total) if total else 0
     if current_ratio > best_ratio:
-        user["best_score"] = correct
-        user["best_total"] = total
+        user_stats["best_score"] = correct
+        user_stats["best_total"] = total
 
-    stats[key] = user
+    stats[key] = user_stats
     save_stats(stats)
 
 
@@ -112,17 +156,18 @@ async def _send_question(message: Message, state: FSMContext) -> None:
     )
 
 
-async def _finish_quiz(message: Message, state: FSMContext, user_id: int) -> None:
+async def _finish_quiz(message: Message, state: FSMContext, user: User) -> None:
     data = await state.get_data()
     correct = data.get("correct_count", 0)
     total = len(data.get("questions", []))
     mode = data.get("mode", "mixed")
+    points = data.get("points", 0)
 
-    _update_user_stats(user_id, correct, total, mode)
+    _update_user_stats(user, correct, total, mode, points)
     await state.clear()
 
     await message.answer(
-        f"Викторина аяқталды!\nНәтиже: {correct}/{total} дұрыс жауап бердіңіз.",
+        f"Викторина аяқталды!\nНәтиже: {correct}/{total} дұрыс жауап бердіңіз.\nҰпай: {points}",
         reply_markup=main_menu_keyboard(),
     )
 
@@ -154,6 +199,7 @@ async def quiz_start(callback: CallbackQuery, state: FSMContext) -> None:
         questions=questions,
         current_index=0,
         correct_count=0,
+        points=0,
         selected=[],
     )
 
@@ -185,13 +231,16 @@ async def quiz_answer(callback: CallbackQuery, state: FSMContext) -> None:
     correct_set = set(question.get("correct", []))
     is_correct = {choice} == correct_set
     if is_correct:
-        await state.update_data(correct_count=data.get("correct_count", 0) + 1)
+        await state.update_data(
+            correct_count=data.get("correct_count", 0) + 1,
+            points=data.get("points", 0) + _points_for_question(question),
+        )
 
     await callback.message.answer(_build_explanation(question, is_correct))
 
     next_index = current_index + 1
     if next_index >= len(questions):
-        await _finish_quiz(callback.message, state, callback.from_user.id)
+        await _finish_quiz(callback.message, state, callback.from_user)
     else:
         await state.update_data(current_index=next_index, selected=[])
         await _send_question(callback.message, state)
@@ -242,13 +291,16 @@ async def quiz_submit(callback: CallbackQuery, state: FSMContext) -> None:
     correct_set = set(question.get("correct", []))
     is_correct = selected == correct_set
     if is_correct:
-        await state.update_data(correct_count=data.get("correct_count", 0) + 1)
+        await state.update_data(
+            correct_count=data.get("correct_count", 0) + 1,
+            points=data.get("points", 0) + _points_for_question(question),
+        )
 
     await callback.message.answer(_build_explanation(question, is_correct))
 
     next_index = current_index + 1
     if next_index >= len(data.get("questions", [])):
-        await _finish_quiz(callback.message, state, callback.from_user.id)
+        await _finish_quiz(callback.message, state, callback.from_user)
     else:
         await state.update_data(current_index=next_index, selected=[])
         await _send_question(callback.message, state)

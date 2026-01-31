@@ -1,9 +1,9 @@
-from aiogram import Router
+from aiogram import Router, F
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
-from bot.constants import WELCOME_TEXT, HELP_TEXT, MENU_BACK
+from bot.constants import WELCOME_TEXT, HELP_TEXT, ABOUT_TEXT, MENU_BACK, MENU_HELP, MENU_ABOUT
 from bot.keyboards.system.menu import main_menu_keyboard
 
 router = Router()
@@ -18,6 +18,18 @@ async def cmd_start(message: Message, state: FSMContext) -> None:
 @router.message(Command("help"))
 async def cmd_help(message: Message) -> None:
     await message.answer(HELP_TEXT, reply_markup=main_menu_keyboard())
+
+
+@router.message(F.text == MENU_HELP)
+async def menu_help(message: Message, state: FSMContext) -> None:
+    await state.clear()
+    await message.answer(HELP_TEXT, reply_markup=main_menu_keyboard())
+
+
+@router.message(F.text == MENU_ABOUT)
+async def menu_about(message: Message, state: FSMContext) -> None:
+    await state.clear()
+    await message.answer(ABOUT_TEXT, reply_markup=main_menu_keyboard())
 
 
 @router.message(Command("menu"))
